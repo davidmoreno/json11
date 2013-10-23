@@ -71,17 +71,26 @@ The Json class methods can also throw standard exceptions out_of_range (from ope
 
 ## Constructors and initializers
 
-<table>
-<tr><td>Json()</td> <td>Initializes to Json::null</td></tr>
-<tr><td>Json(const Json&)</td> <td>Copy contructor</td></tr>
-<tr><td>Json(Json&&)</td> <td>Move contructor</td></tr>
-<tr><td>Json(std::istream&) </td> <td>Read and parse well-formed JSON UTF-8 text</td></tr>
-<tr><td>Json(T x) </td> <td>Conversions from scalar type T, where T is one of bool, int, long, long long, float, double, long double, const char*, std::string. Internally all numbers are stored as long double. </td></tr>
-<tr><td>Json& operator = (const Json&) </td> <td>Copy initializer </td></tr>
-<tr><td>Json& operator = (Json&&) </td> <td>Move initializer </td></tr>
-<tr><td>Json(std::initializer_list<Json>) </td> <td>Creates an instance representing JSON array. Elements of the initializer_list must be convertible to Json. </td></tr>
-<tr><td>virtual ~Json() </td> <td>Destructor </td></tr>
-</table>
+<dl>
+<dt>Json()</dt>
+<dd>Default constructor creates a Json *null* instance.</dd>
+<dt>Json(const Json&)</dt>
+<dd>Copy contructor.</dd>
+<dt>Json(Json&&)</dt>
+<dd>Move contructor.</dd>
+<dt>Json(std::istream&)</dt>
+<dd>Reads and parses well-formed JSON UTF-8 text.</dd>
+<dt>Json(T x)</dt>
+<dd>Conversions from scalar type **T**, where **T** is one of bool, int, long, long long, float, double, long double, const char*, std::string. Internally all numbers are stored as long double.</dd>
+<dt>Json& operator = (const Json&)</dt>
+<dd>Copy initializer.</dd>
+<dt>Json& operator = (Json&&)</dt>
+<dd>Move initializer.</dd>
+<dt>Json(std::initializer_list<Json>)</dt>
+<dd>Creates an instance representing JSON array. Elements of the initializer_list must be either Json instances or convertible to Json.</dd>
+<dt>virtual ~Json()</dt>
+<dd>Destructor.</dd>
+</dl>
 
 ## Casts
 
@@ -94,53 +103,70 @@ The Json class methods can also throw standard exceptions out_of_range (from ope
 
 ## Arrays
 
-<table>
-<tr><td>Json& operator << (const Json&)</td> <td>Appends an element to the array. To create a new array just append something to a null instance, or use the constructor with initializer list.</td></tr>
-<tr><td>const Json operator [] (int) const</td> <td>Retrieves array element by index.</td></tr>
-<tr><td>void insert(unsigned index, const Json& that)</td> <td>Inserts _that_ into array before _index_, so it becomes the one at _index_.</td></tr>
-<tr><td>Json& replace(unsigned index, const Json& that)</td> <td>Replaces array element at _index_ by _that_. </td></tr>
-<tr><td>void erase(unsigned index)</td> <td>Removes element at _index_ from the array.</td></tr>
-</table>
+<dl>
+<dt>Json& operator << (const Json&)</dt>
+<dd>Appends an element to the array. To create a new array just append something to a null instance, or use the constructor with initializer list.</dd>
+<dt>const Json operator [] (int) const</dt>
+<dd>Retrieves array element by index.</dd>
+<dt>void insert(unsigned index, const Json& that)</dt>
+<dd>Inserts *that* into array before *index*, so it becomes the one at *index*.</dd>
+<dt>Json& replace(unsigned index, const Json& that)</dt>
+<dd>Replaces array element at *index* by *that*</dd>
+<dt>void erase(unsigned index)</dt>
+<dd>Removes element at *index* from the array.</dd>
+</dl>
 
 These methods throw `use_error` if this Json instance is not an array. 
 
 ## Objects
 
-<table>
-<tr><td>Json& set(std::string key, const Json& value)</td> <td>Adds property "key:value" to this object, or replaces the _value_ if _key_ is already there. To create a new object, start from a null Json instance. </td></tr>
-<tr><td>Json get(const std::string& key)</td> <td>Returns value for the given key, or Json::null if this instance does not have such property. </td></tr>
-<tr><td>const Json operator [] (std::string&)</td> <td>Same as `get()`.</td></tr>
-<tr><td>const Json operator [] (const char*)</td> <td>Same as `get()`.</td></tr>
-<tr><td>bool has(const std::string& key) const</td> <td>Returns `true` if this instance has propery with given _key_.</td></tr>
-<tr><td>std::vector<std::string> keys()</td> <td>Returns all property keys for this instance.</td></tr>
-<tr><td></td> <td></td></tr>
-</table>
+<dl>
+<dt>Json& set(std::string key, const Json& value)</dt>
+<dd>Adds property "key:value" to this object, or replaces the *value* if *key* is already there. To create a new object, start from a null Json instance.</dd>
+<dt>Json get(const std::string& key)</dt>
+<dd>Returns value for the given key, or Json::null if this instance does not have such property.</dd>
+<dt>const Json operator [] (std::string&)</dt>
+<dd>Same as `get()`.</dd>
+<dt>const Json operator [] (const char*)</dt>
+<dd>Same as `get()`.</dd>
+<dt>bool has(const std::string& key) const</dt>
+<dd>Returns `true` if this instance has propery with given *key*.</dd>
+<dt>std::vector<std::string> keys()</dt>
+<dd>Returns all property keys for this instance.</dd>
+</dl>
 
 ## Comparison
 
-<table>
-<tr><td>bool operator == (const Json&)</td> <td>Compares Json instances. Scalars are equal if and only if they have same types and same values. Arrays are equal if their elements and order of them are the same. Objects are equal if their property keys and corresponding values are equal, regardless of order.</td></tr>
-<tr><td>bool operator != (const Json&)</td> <td>The opposite.</td></tr>
-</table>
+<dl>
+<dt>bool operator == (const Json&)</dt> 
+<dd>Compares Json instances. Scalars are equal if and only if they have same types and same values. Arrays are equal if their elements and order of them are the same. Objects are equal if their property keys and corresponding values are equal, regardless of order.</dd>
+<dt>bool operator != (const Json&)</dt> 
+<dd>The opposite.</dd>
+</dl>
 
 ## Parsing and formatting
 
-<table>
-<tr><td>static Json parse(const std::string&)</td> <td>Returns a Json instance built from well-formed JSON text. UTF-8 encoding is assumed. See also Json(std::istream&).</td></tr>
-<tr><td>std::string stringify()</td> <td>Returns well-formed JSON text representing this object as a string.</td></tr>
-<tr><td>std::string format()</td> <td>Same as stringify().</td></tr>
-<tr><td>friend std::ostream& operator << (std::ostream&, const Json&);</td> <td>Writes well-formed JSON text representing this object into std::ostream.</td></tr>
-<tr><td>static int indent</td> <td>If not 0, result of formatting looks prettier.</td></tr>
-</table>
+<dl>
+<dt>static Json parse(const std::string&)</dt> 
+<dd>Returns a Json instance built from well-formed JSON text. UTF-8 encoding is assumed. See also Json(std::istream&).</dd>
+<dt>std::string stringify()</dt> 
+<dd>Returns well-formed JSON text representing this object as a string.</dd>
+<dt>std::string format()</dt> 
+<dd>Same as stringify().</dd>
+<dt>friend std::ostream& operator << (std::ostream&, const Json&)</dt> 
+<dd>Writes well-formed JSON text representing this object into std::ostream.</dd>
+<dt>static int indent</dt> 
+<dd>If not 0, result of formatting looks prettier.</dd>
+</dl>
 
 ## Etc.
 
-<table>
-<tr><td>size_t size() const</td> <td>Returns size of an array or number of properties for an object.</td></tr>
-<tr><td>static Json null</td> <td>The null instance.</td></tr>
-<tr><td></td> <td></td></tr>
-<tr><td></td> <td></td></tr>
-</table>
+<dl>
+<dt>size_t size() const</dt> 
+<dd>Returns size of an array or number of properties for an object.</dd>
+<dt>static Json null</dt> 
+<dd>The **null** instance.</dd>
+</dl>
 
 ## Miscellaneous notes
 
