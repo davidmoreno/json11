@@ -9,23 +9,29 @@ Json-11 is yet another C++ class implementing [JSON](http://json.org) data inter
 
 ## The basics
 
+```c++
     Json jnull; // creates a null Json object.
     Json jtrue = true, pi = 3.14, str = "Hello";  // scalar objects
     Json arr { 1, 2, str };   // array object, using initializer list
     arr << false;  // do you prefer 'push_back' ?
+```
 
 To create key-value objects, start with a null object. Then use method `set(key,value)` to populate it.
 
+```c++
     Json obj;
     obj.set("one", 1).set("pi", pi).set("arr", arr);
     cout << obj << endl;   // prints {"one":1,"pi":3.14,"arr":[1,2,"Hello",false]}
+```
 
 To extract scalar value from a Json instance, assign it to a scalar variable of matching type or use a cast. For collections use `operator[]` with either integer or string indexes.
 
+```c++
     string text = str;     // text is Hello (without quotes)
     double num_pi = pi;
     int one = obj["one"];
     string hello = obj["arr"][2];
+```
 
 To 'stringify' a Json instance, write it to a std::ostream. To get it as a std::string use method `stringify()` or its alias `format()`:
 
@@ -33,10 +39,12 @@ To 'stringify' a Json instance, write it to a std::ostream. To get it as a std::
 
 To parse a JSON text, read it from a std::istream. To parse it from std::string use static  method `parse()`:
 
+```c++
     Json obj2 = Json::parse(jsontext);
     cout << obj == obj2 << endl;   // prints true; yes, Json_s_ are comparable
     ifstream fs("big.json");
     Json big(fs);
+```
 
 To determine the type and size of a Json instance use methods `type()` and `size()`. The first returns one of `enum Json::Type` values:
 
@@ -50,19 +58,22 @@ This example also shows that Json instances can be compared. Scalars are equal i
 
 The Json class defines two exception classes, `parse_error` and `use_error`. The first one can be thrown only from `Json(istream&)`. The second is thrown when the class methods are used inappropriately, for example when `operator<<` is used for an object. It is also thrown when adding to a container would lead to circular dependency, like in this example:
 
+```c++
     Json js1, js2;
     js1 << 1 << 2;
     js2 << js1;
     js1 << js2;   // error
+```
 
 The Json class methods can also throw standard exceptions out_of_range (from operator[]) and bad_cast.
 
 ## Constructors
 
-| Json() | initializes to Json::null |
-| Json(const Json&) | copy contructor |
-| Json(Json&&) | move contructor |
-
+<table>
+<tr><td>Json()</td> <td>initializes to Json::null</td></tr>
+<tr><td>Json(const Json&)</td> <td>copy contructor</td></tr>
+<tr><td>Json(Json&&)</td> <td>move contructor</td></tr>
+</table>
 
 ## Miscellaneous notes
 
