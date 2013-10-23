@@ -9,7 +9,7 @@ Json-11 is yet another C++ class implementing [JSON](http://json.org) data inter
 
 Then drop json11.cpp into your project to compile. Note that you need a compiler that supports C++11. I only tested it with GCC 4.8.1 on Linux. For GCC don't forget to add `-std=c++11` to compiler flags.
 
-## The basics
+### The basics
 
 ```c++
 Json jnull; // creates a null Json object.
@@ -54,9 +54,7 @@ To determine the type and size of a Json instance use methods `type()` and `size
 
 The second returns either number of array elements or number of properties of an object. Property names are returned by `keys()` as `vector<string>`. These methods, together with `operator[]` allow to fully traverse an object.
 
-
-
-## Exceptions
+### Exceptions
 
 The Json class defines two exception classes, `parse_error` and `use_error`. The first one can be thrown only from `Json(istream&)`. The second is thrown when the class methods are used inappropriately, for example when `operator<<` is used for an object. It is also thrown when adding to a container would lead to circular dependency, like in this example:
 
@@ -69,11 +67,11 @@ The Json class defines two exception classes, `parse_error` and `use_error`. The
 
 The Json class methods can also throw standard exceptions out_of_range (from operator[]) and bad_cast.
 
-## Constructors and initializers
+### Constructors and initializers
 
 <dl>
 <dt>Json()</dt>
-<dd>Default constructor creates a Json *null* instance.</dd>
+<dd>Default constructor creates a Json <b>null</b> instance.</dd>
 <dt>Json(const Json&)</dt>
 <dd>Copy contructor.</dd>
 <dt>Json(Json&&)</dt>
@@ -81,7 +79,7 @@ The Json class methods can also throw standard exceptions out_of_range (from ope
 <dt>Json(std::istream&)</dt>
 <dd>Reads and parses well-formed JSON UTF-8 text.</dd>
 <dt>Json(T x)</dt>
-<dd>Conversions from scalar type **T**, where **T** is one of bool, int, long, long long, float, double, long double, const char*, std::string. Internally all numbers are stored as long double.</dd>
+<dd>Conversions from scalar type <b>T</b>, where <b>T</b> is one of bool, int, long, long long, float, double, long double, const char*, std::string. Internally all numbers are stored as long double.</dd>
 <dt>Json& operator = (const Json&)</dt>
 <dd>Copy initializer.</dd>
 <dt>Json& operator = (Json&&)</dt>
@@ -92,7 +90,7 @@ The Json class methods can also throw standard exceptions out_of_range (from ope
 <dd>Destructor.</dd>
 </dl>
 
-## Casts
+### Casts
 
 <dl>
 <dt>Type type() const </dt>
@@ -101,7 +99,7 @@ The Json class methods can also throw standard exceptions out_of_range (from ope
 <dd>If this instance represents a scalar value, returns it. T is one of bool, int, long, long long, float, double, long double, std::string. Throws std::bad_cast if wrong type is requested.</dd>
 </dl>
 
-## Arrays
+### Arrays
 
 <dl>
 <dt>Json& operator << (const Json&)</dt>
@@ -109,20 +107,20 @@ The Json class methods can also throw standard exceptions out_of_range (from ope
 <dt>const Json operator [] (int) const</dt>
 <dd>Retrieves array element by index.</dd>
 <dt>void insert(unsigned index, const Json& that)</dt>
-<dd>Inserts *that* into array before *index*, so it becomes the one at *index*.</dd>
+<dd>Inserts <i>that</i> into array before <i>index</i>, so it becomes the one at <i>index</i>.</dd>
 <dt>Json& replace(unsigned index, const Json& that)</dt>
-<dd>Replaces array element at *index* by *that*</dd>
+<dd>Replaces array element at <i>index</i> by <i>that</i></dd>
 <dt>void erase(unsigned index)</dt>
-<dd>Removes element at *index* from the array.</dd>
+<dd>Removes element at </i>index</i> from the array.</dd>
 </dl>
 
 These methods throw `use_error` if this Json instance is not an array. 
 
-## Objects
+### Objects
 
 <dl>
 <dt>Json& set(std::string key, const Json& value)</dt>
-<dd>Adds property "key:value" to this object, or replaces the *value* if *key* is already there. To create a new object, start from a null Json instance.</dd>
+<dd>Adds property "key:value" to this object, or replaces the <i>value</i> if <i>key</i> is already there. To create a new object, start from a null Json instance.</dd>
 <dt>Json get(const std::string& key)</dt>
 <dd>Returns value for the given key, or Json::null if this instance does not have such property.</dd>
 <dt>const Json operator [] (std::string&)</dt>
@@ -135,7 +133,7 @@ These methods throw `use_error` if this Json instance is not an array.
 <dd>Returns all property keys for this instance.</dd>
 </dl>
 
-## Comparison
+### Comparison
 
 <dl>
 <dt>bool operator == (const Json&)</dt> 
@@ -144,7 +142,7 @@ These methods throw `use_error` if this Json instance is not an array.
 <dd>The opposite.</dd>
 </dl>
 
-## Parsing and formatting
+### Parsing and formatting
 
 <dl>
 <dt>static Json parse(const std::string&)</dt> 
@@ -159,16 +157,16 @@ These methods throw `use_error` if this Json instance is not an array.
 <dd>If not 0, result of formatting looks prettier.</dd>
 </dl>
 
-## Etc.
+### Etc.
 
 <dl>
 <dt>size_t size() const</dt> 
 <dd>Returns size of an array or number of properties for an object.</dd>
 <dt>static Json null</dt> 
-<dd>The **null** instance.</dd>
+<dd>The <b>null</b> instance.</dd>
 </dl>
 
-## Miscellaneous notes
+### Miscellaneous notes
 
 Json class defines a static member Json::null of type JSNULL. It can be used to test for 'nullity' and for removing all contents from an object:
 
