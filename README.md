@@ -85,10 +85,12 @@ The Json class methods can also throw standard exceptions out_of_range (from ope
 
 ## Casts
 
-<table>
-<tr><td>Type type() const </td> <td>Returns JSON type of this instance, one of `enum Json::Type` </td></tr>
-<tr><td>operator T() const </td> <td>If this instance represents a scalar value, returns it. T is one of bool, int, long, long long, float, double, long double, std::string. Throws std::bad_cast if wrong type is requested. </td></tr>
-</table>
+<dl>
+<dt>Type type() const </dt>
+<dd>Returns JSON type of this instance, one of enum Json::Type</dd>
+<dt>operator T() const </dt>
+<dd>If this instance represents a scalar value, returns it. T is one of bool, int, long, long long, float, double, long double, std::string. Throws std::bad_cast if wrong type is requested.</dd>
+</dl>
 
 ## Arrays
 
