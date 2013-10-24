@@ -1,3 +1,11 @@
+/*
+ * This file is part of json11 project (https://github.com/borisgontar/json11).
+ *
+ * Copyright (c) 2013 Boris Gontar.
+ * This library is free software; you can redistribute it and/or modify
+ * it under the terms of the MIT license. See LICENSE for details.
+ */
+
 #ifndef JSON11_H_
 #define JSON11_H_
 
@@ -98,7 +106,7 @@ public:
     Json() { (root = &Node::null)->refcnt++; }
     Json(const Json& that);
     Json(Json&& that);
-    Json(std::istream&);   // parse
+    Json(std::istream&, bool full = true);   // parse
     virtual ~Json();
     //
     // initializers
@@ -141,10 +149,10 @@ public:
     Json& replace(unsigned index, const Json&);
     //
     // subscript
+    size_t size() const;
     const Json operator [] (int) const;
     const Json operator [] (std::string& key) const { return get(key); }
     const Json operator [] (const char*) const;
-    size_t size() const;
     //
     // stringify
     std::string stringify() { return format(); }

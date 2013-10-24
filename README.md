@@ -1,9 +1,9 @@
 
-# Introduction
+## Introduction
 
-Json-11 is yet another C++ class implementing [JSON](http://json.org) data interchange format. It is designed with the (currenly) latest C++11 standard in mind. The code is small (a single file less than 1000 lines in size), reasonably fast, and the interface (aka API) is made as simple as possible.
+Json-11 is yet another C++ class implementing [JSON](http://json.org) data interchange format. It is designed with the (currenly) latest C++11 standard in mind. The code fits in a single file, reasonably fast, and the interface is made as simple as possible.
 
-# Usage
+## Usage
 
     #include <json11.h>
 
@@ -48,11 +48,11 @@ To parse a JSON text, read it from a std::istream. To parse it from std::string 
     Json big(fs);
 ```
 
-To determine the type and size of a Json instance use methods `type()` and `size()`. The first returns one of `enum Json::Type` values:
+To determine the type and size of a Json instance use methods `type()` and `size()`. The first one returns one of `enum Json::Type` values:
 
     enum Json::Type { JSNULL, BOOL, NUMBER, STRING, ARRAY, OBJECT };
 
-The second returns either number of array elements or number of properties of an object. Property names are returned by `keys()` as `vector<string>`. These methods, together with `operator[]` allow to fully traverse an object.
+The second one returns either number of array elements or number of properties of an object. Property names are returned by `keys()` as `vector<string>`. These methods, together with `operator[]` allow to fully traverse an object.
 
 ### Exceptions
 
@@ -76,8 +76,8 @@ The Json class methods can also throw standard exceptions out_of_range (from ope
 <dd>Copy contructor.</dd>
 <dt>Json(Json&&)</dt>
 <dd>Move contructor.</dd>
-<dt>Json(std::istream&)</dt>
-<dd>Reads and parses well-formed JSON UTF-8 text.</dd>
+<dt>Json(std::istream&, bool full = true)</dt>
+<dd>Reads and parses well-formed JSON UTF-8 text. By default tries to parse until end of file. If not <i>full</i>, leaves input stream where all brackets are closed, so there may be more text.</dd>
 <dt>Json(T x)</dt>
 <dd>Conversions from scalar type <b>T</b>, where <b>T</b> is one of bool, int, long, long long, float, double, long double, const char*, std::string. Internally all numbers are stored as long double.</dd>
 <dt>Json& operator = (const Json&)</dt>
@@ -114,7 +114,7 @@ The Json class methods can also throw standard exceptions out_of_range (from ope
 <dd>Removes element at </i>index</i> from the array.</dd>
 </dl>
 
-These methods throw `use_error` if this Json instance is not an array. 
+These methods throw `use_error` if this Json instance is not an array.
 
 ### Objects
 
@@ -136,50 +136,55 @@ These methods throw `use_error` if this Json instance is not an array.
 ### Comparison
 
 <dl>
-<dt>bool operator == (const Json&)</dt> 
+<dt>bool operator == (const Json&)</dt>
 <dd>Compares Json instances. Scalars are equal if and only if they have same types and same values. Arrays are equal if their elements and order of them are the same. Objects are equal if their property keys and corresponding values are equal, regardless of order.</dd>
-<dt>bool operator != (const Json&)</dt> 
+<dt>bool operator != (const Json&)</dt>
 <dd>The opposite.</dd>
 </dl>
 
 ### Parsing and formatting
 
 <dl>
-<dt>static Json parse(const std::string&)</dt> 
+<dt>static Json parse(const std::string&)</dt>
 <dd>Returns a Json instance built from well-formed JSON text. UTF-8 encoding is assumed. See also Json(std::istream&).</dd>
-<dt>std::string stringify()</dt> 
+<dt>std::string stringify()</dt>
 <dd>Returns well-formed JSON text representing this object as a string.</dd>
-<dt>std::string format()</dt> 
+<dt>std::string format()</dt>
 <dd>Same as stringify().</dd>
-<dt>friend std::ostream& operator << (std::ostream&, const Json&)</dt> 
+<dt>friend std::ostream& operator << (std::ostream&, const Json&)</dt>
 <dd>Writes well-formed JSON text representing this object into std::ostream.</dd>
-<dt>static int indent</dt> 
+<dt>static int indent</dt>
 <dd>If not 0, result of formatting looks prettier.</dd>
 </dl>
 
 ### Etc.
 
 <dl>
-<dt>size_t size() const</dt> 
+<dt>size_t size() const</dt>
 <dd>Returns size of an array or number of properties for an object.</dd>
-<dt>static Json null</dt> 
+<dt>static Json null</dt>
 <dd>The <b>null</b> instance.</dd>
 </dl>
 
 ### Miscellaneous notes
 
+Json class has value semantics. The following code:
+
+```c++
+Json arr { 1, 2, "three" };
+Json three = arr[2];
+arr.replace(2, 3);   // or:  arr.erase(2);
+cout << three;
+```
+
+still prints "three". I hope this is what you expected.
+
+-------
+
 Json class defines a static member Json::null of type JSNULL. It can be used to test for 'nullity' and for removing all contents from an object:
 
     if (js == Json::null)
         big_object = Json::null;
-
-------
-
-Reading a file creates a representation of entire file in memory. When it is not desirable, use static method `traverse`:
-
-    Json::traverse(fs, on_entry, on_leave, on_value);
-
-which calls supplied procedures while traversing through the file.
 
 ------
 
@@ -189,6 +194,30 @@ There is a difference between s1 and s2 in the following example:
     string s1 = hello;
     string s2 = hello.format();
 
-The assignment to s1 is a cast, so the value of s1 is _hello_. The value of s2 is _"hello"_ (with double quotes) because `format` creates a well-formed JSON text and returns it as a string.
+The assignment to s1 is a cast, so the value of s1 is *hello*. The value of s2 is *"hello"* (with double quotes) because `format` creates a well-formed JSON text and returns it as a string.
+
+------
+
+The project contains a toy command line application for viewing and editing JSON files. Just compile and run clison.cpp. The dialog looks like this:
+
+```
+at top: object
+  0. web-app {3}
+> 0
+.web-app: object
+  0. servlet [5]
+  1. servlet-mapping {5}
+  2. taglib {2}
+> 2
+.web-app.taglib: object
+  0. taglib-uri: "cofax.tld"
+  1. taglib-location: "/WEB-INF/tlds/cofax.tld"
+> h
+enter a number to select an object, q to go back
+.             : list current object
+p [file.json] : print out current object [into file]
+= text        : replace current object by parsed text
+>
+```
 
 ------
