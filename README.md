@@ -1,4 +1,3 @@
-
 ## Introduction
 
 Json-11 is yet another C++ class implementing [JSON](http://json.org) data interchange format. It is designed with the (currenly) latest C++11 standard in mind. The code fits in a single file, reasonably fast, and the interface is made as simple as possible.
@@ -111,11 +110,11 @@ The Json class methods can also throw standard exceptions out_of_range (from ope
 <dt>Json::Property operator [] (int) const</dt>
 <dd>Retrieves array element by index, as in `int x = arr[0]`, or replaces it, as in `arr[0] = "zero"`</dd>
 <dt>void insert(int index, const Json& that)</dt>
-<dd>Inserts <i>that</i> into array before <i>index</i>, so it becomes the one at <i>index</i>. If <i>index</i> \< 0, counts from the end.</dd>
+<dd>Inserts <i>that</i> into array before <i>index</i>, so it becomes the one at <i>index</i>. If <i>index</i> &lt; 0, counts from the end.</dd>
 <dt>Json& replace(int index, const Json& that)</dt>
-<dd>Replaces array element at <i>index</i> by <i>that</i>. If <i>index</i> \< 0, counts from the end.</dd>
+<dd>Replaces array element at <i>index</i> by <i>that</i>. If <i>index</i> &lt; 0, counts from the end.</dd>
 <dt>void erase(int index)</dt>
-<dd>Removes element at </i>index</i> from the array. If <i>index</i> \< 0, counts from the end.</dd>
+<dd>Removes element at </i>index</i> from the array. If <i>index</i> &lt; 0, counts from the end.</dd>
 </dl>
 
 These methods throw `use_error` if this Json instance is not an array.
