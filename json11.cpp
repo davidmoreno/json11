@@ -26,7 +26,7 @@ void Json::Node::test() {
         return;
     }
     for (Node* it : nodes) {
-        cout << it->refcnt << ' ' << it->type() << '\n';
+        cout << it->refcnt << ' ' << (int)it->type() << '\n';
     }
 }
 #endif
@@ -95,7 +95,7 @@ void Json::Node::unref() {
 bool Json::Array::operator == (const Node& that) {
     if (this == &that)
         return true;
-    if (that.type() != ARRAY)
+    if (that.type() != Type::ARRAY)
         return false;
     vector<Node*>& that_list = ((Array*)&that)->list;
     return equal(list.begin(), list.end(), that_list.begin(),
@@ -105,7 +105,7 @@ bool Json::Array::operator == (const Node& that) {
 bool Json::Object::operator == (const Node& that) {
     if (this == &that)
         return true;
-    if (that.type() != OBJECT)
+    if (that.type() != Type::OBJECT)
         return false;
     std::map<const string*, Node*>& that_map = ((Object*)&that)->map;
     typedef pair<const string*, Node*> kv;
@@ -116,7 +116,7 @@ bool Json::Object::operator == (const Node& that) {
 bool Json::Number::operator == (const Node& that) {
     if (this == &that)
         return true;
-    if (that.type() != NUMBER)
+    if (that.type() != Type::NUMBER)
         return false;
     Number& numb = *(Number*)&that;
     if (fabs(value) < LDBL_EPSILON)
@@ -184,11 +184,11 @@ Json::~Json() {
 }
 
 Json::Object* Json::mkobject() {
-    if (root->type() == JSNULL) {
+    if (root->type() == Type::JSNULL) {
         root = new Object();
         root->refcnt++;
     }
-    if (root->type() != OBJECT)
+    if (root->type() != Type::OBJECT)
         throw use_error("method not applicable");
     return (Object*)root;
 }
@@ -202,11 +202,11 @@ Json& Json::set(string key, const Json& val) {
 }
 
 Json::Array* Json::mkarray() {
-    if (root->type() == JSNULL) {
+    if (root->type() == Type::JSNULL) {
         root = new Array();
         root->refcnt++;
     }
-    if (root->type() != ARRAY)
+    if (root->type() != Type::ARRAY)
         throw use_error("method not applicable");
     return (Array*)root;
 }
@@ -218,58 +218,62 @@ Json& Json::operator << (const Json& that) {
     return *this;
 }
 
-void Json::insert(unsigned index, const Json& that) {
+void Json::insert(int index, const Json& that) {
     if (that.root->contains(root))
         throw use_error("cyclic dependency");
     mkarray()->ins(index, that.root);
 }
 
-Json& Json::replace(unsigned index, const Json& that) {
+Json& Json::replace(int index, const Json& that) {
     if (that.root->contains(root))
         throw use_error("cyclic dependency");
     mkarray()->repl(index, that.root);
     return *this;
 }
 
-void Json::erase(unsigned index) {
+void Json::erase(int index) {
     mkarray()->del(index);
 }
 
-const Json Json::operator [] (int index) const {
-    if (root->type() != ARRAY)
-        throw use_error("method not applicable");
-    Array* rp = (Array*)root;
-    Json ret(rp->list.at(index));
-    return ret;
+Json Json::Property::operator = (const Json& that) {
+    if (host->type() == Type::OBJECT)
+        ((Object*)host)->set(key, that.root);
+    else if (host->type() == Type::ARRAY)
+        ((Array*)host)->repl(index, that.root);
+    else
+        throw logic_error("Property::operator =");
+    return target();
 }
 
-const Json Json::operator [] (const char* key) const {
-    return get(string(key));
+Json Json::Property::operator = (const Property& that) {
+    return (*this = that.target());
+}
+
+Json::Property Json::operator [] (int index) {
+    return Property(mkarray(), index);
+}
+
+Json::Property Json::operator [] (const string& key) {
+    return Property(mkobject(), key);
 }
 
 size_t Json::size() const {
-    if (root->type() == ARRAY)
+    if (root->type() == Type::ARRAY)
         return ((Array*)root)->list.size();
-    if (root->type() == OBJECT)
+    if (root->type() == Type::OBJECT)
         return ((Object*)root)->map.size();
     throw use_error("method not applicable");
 }
 
 Json Json::get(const string& key) const {
-    if (root->type() != OBJECT)
+    if (root->type() != Type::OBJECT)
         throw use_error("method not applicable");
-    auto kp = keyset.find(key);
-    if (kp == keyset.end())
-        return null;
-    Object* op = (Object*)root;
-    auto it = op->map.find(&*kp);
-    if (it == op->map.end())
-        return null;
-    return it->second;
+    Node* n = ((Object*)root)->get(key);
+    return n == nullptr ? null : Json(n);
 }
 
 bool Json::has(const string& key) const {
-    if (root->type() != OBJECT)
+    if (root->type() != Type::OBJECT)
         throw use_error("method not applicable");
     auto kp = keyset.find(key);
     if (kp == keyset.end())
@@ -279,8 +283,30 @@ bool Json::has(const string& key) const {
     return it != obj->map.end();
 }
 
+Json::Property::Property(Node* node, const string& key) : host(node) {
+    if (node->type() != Type::OBJECT)
+        throw use_error("method not applicable");
+    this->key = key;
+    index = -1;
+}
+
+Json::Property::Property(Node* node, int index) : host(node) {
+    if (node->type() != Type::ARRAY)
+        throw use_error("method not applicable");
+    key = "";
+    this->index = index;
+}
+
+Json Json::Property::target() const {
+    if (host->type() == Type::OBJECT)
+        return ((Object*)host)->get(key);
+    if (host->type() == Type::ARRAY)
+        return ((Array*)host)->list.at(index);
+    throw logic_error("Property::operator Json()");
+}
+
 vector<string> Json::keys() {
-    if (root->type() != OBJECT)
+    if (root->type() != Type::OBJECT)
         throw use_error("method not applicable");
     Object* op = (Object*)root;
     vector<string> ret;
@@ -290,7 +316,8 @@ vector<string> Json::keys() {
 }
 
 bool Json::String::operator == (const Node& that) {
-    return this == &that || (that.type() == STRING && value == ((String*)&that)->value);
+    return this == &that ||
+            (that.type() == Type::STRING && value == ((String*)&that)->value);
 }
 
 void Json::Bool::print(ostream& out) const {
@@ -354,7 +381,6 @@ void Json::Object::print(ostream& out) const {
         comma = true;
     }
     --level;
-    //out << string(indent*level, ' ');
     out << '}';
 }
 
@@ -371,7 +397,6 @@ void Json::Array::print(ostream& out) const {
         comma = true;
     }
     --level;
-    //out << string(indent*level, ' ');
     out << ']';
 }
 
@@ -383,7 +408,18 @@ Json::Object::~Object() {
     map.clear();
 }
 
-void Json::Object::set(const std::string& k, Node* v) {
+Json::Node* Json::Object::get(const string& key) {
+    auto kp = keyset.find(key);
+    if (kp == keyset.end())
+        return nullptr;
+    auto it = map.find(&*kp);
+    if (it == map.end())
+        return nullptr;
+    return it->second;
+
+}
+
+void Json::Object::set(const string& k, Node* v) {
     assert(v != nullptr);
     auto kit = keyset.insert(keyset.begin(), k);
     auto it = map.find(&*kit);
@@ -409,21 +445,27 @@ void Json::Array::add(Node* v) {
 }
 
 /** Inserts given Node* before index. */
-void Json::Array::ins(unsigned index, Node* v) {
+void Json::Array::ins(int index, Node* v) {
     assert(v != nullptr);
-    if (index > list.size())
+    if (index < 0)
+        index += list.size();
+    if (index < 0 || index > (int)list.size())
         throw out_of_range("index out of range");
     list.insert(list.begin() + index, v);
     v->refcnt++;
 }
 
-void Json::Array::del(unsigned index) {
+void Json::Array::del(int index) {
+    if (index < 0)
+        index += list.size();
     Node* v = list.at(index);
     v->unref();
     list.erase(list.begin() + index);
 }
 
-void Json::Array::repl(unsigned index, Node* v) {
+void Json::Array::repl(int index, Node* v) {
+    if (index < 0)
+        index += list.size();
     Node* u = list.at(index);
     u->unref();
     list[index] = v;
@@ -541,7 +583,7 @@ Json::Json(istream& in, bool full) {
                 goto out;
             in.putback(c);
             Json key(in, false);
-            if (key.root->type() != STRING)
+            if (key.root->type() != Type::STRING)
                 throw parse_error("a string expected", in);
             in >> c;
             if (c != ':')
@@ -617,50 +659,50 @@ Json Json::parse(const string& str) {
 }
 
 Json::operator std::string() const {
-    if (root->type() == STRING)
+    if (root->type() == Type::STRING)
         return ((String*)root)->value;
     throw bad_cast();
 }
 
 Json::operator long double() const {
-    if (root->type() == NUMBER)
+    if (root->type() == Type::NUMBER)
         return ((Number*)root)->value;
     throw bad_cast();
 }
 
 Json::operator double() const {
-    if (root->type() == NUMBER)
+    if (root->type() == Type::NUMBER)
         return ((Number*)root)->value;
     throw bad_cast();
 }
 
 Json::operator float() const {
-    if (root->type() == NUMBER) {
+    if (root->type() == Type::NUMBER) {
         return ((Number*)root)->value;
     }
     throw bad_cast();
 }
 
 Json::operator int() const {
-    if (root->type() == NUMBER)
+    if (root->type() == Type::NUMBER)
         return ((Number*)root)->value;
     throw bad_cast();
 }
 
 Json::operator long() const {
-    if (root->type() == NUMBER)
+    if (root->type() == Type::NUMBER)
         return ((Number*)root)->value;
     throw bad_cast();
 }
 
 Json::operator long long() const {
-    if (root->type() == NUMBER)
+    if (root->type() == Type::NUMBER)
         return ((Number*)root)->value;
     throw bad_cast();
 }
 
 Json::operator bool() const {
-    if (root->type() == BOOL)
+    if (root->type() == Type::BOOL)
         return root == &Bool::T;
     throw bad_cast();
 }

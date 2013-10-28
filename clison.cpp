@@ -17,11 +17,11 @@ using namespace std;
 Json follow(Json& top, vector<string>& path, string* full) {
     Json curr = top;
     for (string key : path) {
-        if (curr.type() == Json::Type::ARRAY) {
+        if (curr.type() == Json::ARRAY) {
             curr = curr[stoi(key)];
             if (full != nullptr)
                 *full += "[" + key + "]";
-        } else if (curr.type() == Json::Type::OBJECT) {
+        } else if (curr.type() == Json::OBJECT) {
             curr = curr[key];
             if (full != nullptr)
                 *full += "." + key;
@@ -38,7 +38,7 @@ start:
     string fullpath;
     follow(top, path, &fullpath);
     cout << (fullpath == "" ? "at top" : fullpath) << ": " << tag[type] << endl;
-    if (type == Json::OBJECT) {
+    if (type == Json::Type::OBJECT) {
         int n = 0;
         for (string key : js.keys()) {
             Json prop = js.get(key);
@@ -51,7 +51,7 @@ start:
                 cout << ": " << prop;
             cout << endl;
         }
-    } else if (type == Json::ARRAY) {
+    } else if (type == Json::Type::ARRAY) {
         int n = 0;
         for (unsigned i = 0; i < js.size(); i++) {
             cout << setw(3) << n++ << ". ";
@@ -153,7 +153,6 @@ start:
             next = js[name];
             //name = "." + name;
         } else if (type == Json::ARRAY) {
-            //name = "[" + to_string(n) + "]";
             name = to_string(n);
             next = js[n];
         }
@@ -189,4 +188,3 @@ int main(int argc, char** argv) {
     Json::test();
 #endif
 }
-

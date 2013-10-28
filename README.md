@@ -47,7 +47,7 @@ To parse a JSON text, read it from a std::istream. To parse it from std::string 
 
 ```c++
     Json obj2 = Json::parse(jsontext);
-    cout << obj == obj2 << endl;   // prints true; yes, Json_s_ are comparable
+    cout << (obj == obj2) << endl;   // prints true; yes, Json_s_ are comparable
     ifstream fs("big.json");
     Json big(fs);
 ```
@@ -108,14 +108,14 @@ The Json class methods can also throw standard exceptions out_of_range (from ope
 <dl>
 <dt>Json& operator << (const Json&)</dt>
 <dd>Appends an element to the array. To create a new array just append something to a null instance, or use the constructor with initializer list.</dd>
-<dt>Json operator [] (int) const</dt>
+<dt>Json::Property operator [] (int) const</dt>
 <dd>Retrieves array element by index, as in `int x = arr[0]`, or replaces it, as in `arr[0] = "zero"`</dd>
 <dt>void insert(int index, const Json& that)</dt>
-<dd>Inserts <i>that</i> into array before <i>index</i>, so it becomes the one at <i>index</i>. If <i>index</i> < 0, counts from the end.</dd>
+<dd>Inserts <i>that</i> into array before <i>index</i>, so it becomes the one at <i>index</i>. If <i>index</i> \< 0, counts from the end.</dd>
 <dt>Json& replace(int index, const Json& that)</dt>
-<dd>Replaces array element at <i>index</i> by <i>that</i>. If <i>index</i> < 0, counts from the end.</dd>
+<dd>Replaces array element at <i>index</i> by <i>that</i>. If <i>index</i> \< 0, counts from the end.</dd>
 <dt>void erase(int index)</dt>
-<dd>Removes element at </i>index</i> from the array. If <i>index</i> < 0, counts from the end.</dd>
+<dd>Removes element at </i>index</i> from the array. If <i>index</i> \< 0, counts from the end.</dd>
 </dl>
 
 These methods throw `use_error` if this Json instance is not an array.
@@ -127,19 +127,19 @@ These methods throw `use_error` if this Json instance is not an array.
 <dd>Adds property "key:value" to this object, or replaces the <i>value</i> if <i>key</i> is already there. To create a new object, start from a null Json instance.</dd>
 <dt>Json get(const std::string& key)</dt>
 <dd>Returns value for the given key, or Json::null if this instance does not have such property.</dd>
-<dt>Json operator [] (std::string&)</dt>
-<dd>Same as `get()`.</dd>
-<dt>const Json operator [] (const char*)</dt>
-<dd>Same as `get()`.</dd>
+<dt>Json::Property operator [] (std::string&)</dt>
+<dd>Returns value for the given key, or Json::null if this instance does not have such property. When used on the left of assignment operator as in `obj["key"] = value`, adds a key with given value or replaces existing one.</dd>
+<dt>Json::Property operator [] (const char*)</dt>
+<dd>Same as the previous one.</dd>
 <dt>bool has(const std::string& key) const</dt>
-<dd>Returns `true` if this instance has propery with given *key*.</dd>
+<dd>Returns `true` if this instance has propery with given <i>key</i>.</dd>
 <dt>std::vector<std::string> keys()</dt>
 <dd>Returns all property keys for this instance.</dd>
 </dl>
 
-### Subscript operator
+These methods throw `use_error` if this Json instance is not an key-value object.
 
-Array elements and object properties can be accessed through `operator[]` using integer and string indexes correspondingly. For arrays the element with given index must already exist, otherwise "std::out_of_range" is thrown. For objects, if property with given key does not exist, Json::null is returned.
+### Subscript operator
 
 Technically, `operator[]` returns and instance of internal class Json::Property. Instances of this class behave very much like Json<i>s</i>, so in practice you don't have to remember about it.
 

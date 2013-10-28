@@ -27,7 +27,7 @@ private:
     	unsigned refcnt;
         Node(unsigned init = 0);
         virtual ~Node();
-        virtual Type type() const { return JSNULL; }
+        virtual Type type() const { return Type::JSNULL; }
         virtual void print(std::ostream& out) const { out << "null"; }
         virtual bool contains(const Node* that) const { return false; }
         virtual bool operator == (const Node& that) { return this == &that; }
@@ -39,15 +39,15 @@ private:
         static Node null;
     };
     //
-    struct Bool : public Node {
+    struct Bool : Node {
         Bool(bool x) { refcnt = 1; }
-        Type type() const { return BOOL; }
-        void print(std::ostream& out) const;
+        Type type() const override { return Type::BOOL; }
+        void print(std::ostream& out) const override;
         static Bool T;
         static Bool F;
     };
     //
-    struct Number : public Node {
+    struct Number : Node {
         long double value;
         int prec;
         Number(long double x) { prec = LDBL_DIG; value = x; }
@@ -57,48 +57,78 @@ private:
         Number(long x) { prec = -1; value = x; }
         Number(int x) { prec = -1; value = x; }
         Number(std::istream&);
-        Type type() const { return NUMBER; }
-        void print(std::ostream& out) const;
-        bool operator == (const Node& that);
+        Type type() const override { return Type::NUMBER; }
+        void print(std::ostream& out) const override;
+        bool operator == (const Node& that) override;
     };
     //
-    struct String : public Node {
+    struct String : Node {
         std::string value;
         String(std::string s) { value = s; }
         String(std::istream&);
-        Type type() const { return STRING; }
-        void print(std::ostream& out) const;
-        bool operator == (const Node& that);
+        Type type() const override { return Type::STRING; }
+        void print(std::ostream& out) const override;
+        bool operator == (const Node& that) override;
     };
     //
-    struct Object : public Node {
+    struct Object : Node {
         std::map<const std::string*, Node*> map;
         virtual ~Object();
-        Type type() const { return OBJECT; }
-        void print(std::ostream&) const;
+        Type type() const  override{ return Type::OBJECT; }
+        void print(std::ostream&) const override;
+        Node* get(const std::string&);
         void set(const std::string&, Node*);
-        bool contains(const Node*) const;
-        bool operator == (const Node& that);
+        bool contains(const Node*) const override;
+        bool operator == (const Node& that) override;
     };
     //
-    struct Array : public Node {
+    struct Array : Node {
         std::vector<Node*> list;
         virtual ~Array();
-        Type type() const { return ARRAY; }
-        void print(std::ostream&) const;
+        Type type() const override { return Type::ARRAY; }
+        void print(std::ostream&) const override;
         void add(Node*);
-        void ins(unsigned, Node*);
-        void del(unsigned);
-        void repl(unsigned, Node*);
-        bool contains(const Node*) const;
-        bool operator == (const Node& that);
+        void ins(int, Node*);
+        void del(int);
+        void repl(int, Node*);
+        bool contains(const Node*) const override;
+        bool operator == (const Node& that) override;
+    };
+    //
+    class Property {
+        Node* host;
+        std::string key;
+        int index;
+    public:
+        Property(Node*, const std::string&);
+        Property(Node*, int);
+        Json target() const;
+        operator Json() const { return target(); }
+        operator bool() { return target(); };
+        operator int() { return target(); };
+        operator long() { return target(); };
+        operator long long() { return target(); };
+        operator float() { return target(); };
+        operator double() { return target(); };
+        operator long double() { return target(); };
+        operator std::string() { return target(); };
+        Property operator [] (const std::string& k) { return target()[k]; }
+        Property operator [] (const char* k) { return (*this)[std::string(k)]; }
+        Property operator [] (int i) {return target()[i]; }
+        Json operator = (const Json&);
+        Json operator = (const Property&);
+        friend std::ostream& operator << (std::ostream& out, const Property& p) {
+            return out << (Json)p;
+        }
     };
     Array* mkarray();
     Object* mkobject();
-    Json(Node* node) { (root = node)->refcnt++; }
     static std::set<std::string> keyset;   // all propery names
     static int level;   // for pretty printing
     //
+    Json(Node* node) {
+        (root = (node == nullptr ? &Node::null : node))->refcnt++;
+    }
     Node* root;
     //
 public:
@@ -144,15 +174,15 @@ public:
     //
     // array
     Json& operator << (const Json&);
-    void insert(unsigned index, const Json&);
-    void erase(unsigned index);
-    Json& replace(unsigned index, const Json&);
+    void insert(int index, const Json&);
+    void erase(int index);
+    Json& replace(int index, const Json&);
     //
     // subscript
     size_t size() const;
-    const Json operator [] (int) const;
-    const Json operator [] (std::string& key) const { return get(key); }
-    const Json operator [] (const char*) const;
+    Json::Property operator [] (const std::string&);
+    Json::Property operator [] (const char* k) { return (*this)[std::string(k)]; }
+    Json::Property operator [] (int);
     //
     // stringify
     std::string stringify() { return format(); }

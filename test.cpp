@@ -19,7 +19,14 @@ void expect(string test, ostringstream& out, string wanted) {
     //cout << result << '\n';
     if (result != wanted)
         cout << test << " failed: actual/expected:\n" << result << '\n' << wanted << '\n';
+    else
+        cout << test << " ok\n";
     out.seekp(0);
+}
+
+void proc(Json j, Json a) {
+    j["arr"] = a;
+    a[2] = "bye";
 }
 
 void test() {
@@ -60,7 +67,8 @@ void test() {
     //
     // test3: objects
     Json obj;
-    obj.set("i", 2).set("l", 4294967296).set("ll", lnum);
+    obj["i"] = 2;
+    obj.set("l", 4294967296).set("ll", lnum);
     obj.set("f", 1.23).set("d", 0.98).set("ld", ldnum);
     obj.set("true", true).set("false", false).set("null", Json::null);
     lnum = 0; ldnum = 0;  // should not affect obj
@@ -72,9 +80,10 @@ void test() {
     string js = obj.format();
     istringstream istr(js);
     Json obj2(istr);
-    //cout << obj << '\n' << obj2 << '\n';
     if (obj != obj2)
         cout << "test4 failed\n";
+    else
+        cout << "test4 ok\n";
     //
     // test5: subscript rhs
     Json obj3 = Json::parse(R"/( {"a":[{"x":"pro\"s\tand con\"s"}], "b":[], "c": {"z": [1,2,3]} } )/");
@@ -85,14 +94,16 @@ void test() {
     //
     // test6: subscript lhs
     Json a123 {1, 2, "three"};
+    a123 << Json::parse(R"/({"u":4, "v":5, "w":6})/");
+    a123[3]["v"] = "five";
     out << a123 << ' ';
-    Json three(a123[2]);
-    a123.replace(2, 3);
-    out << three << ' ' << a123 << ' ';
+    Json three = a123[2];
+    a123[2] = 3;
+    out << three << ' ';
     Json objf = obj["f"];
-    obj.set("f", a123);
+    obj["f"] = a123[3]["w"];
     out << objf << ' ' << obj["f"];
-    expect("test6", out, "[1,2,\"three\"] \"three\" [1,2,3] 1.23 [1,2,3]");
+    expect("test6", out, "[1,2,\"three\",{\"u\":4,\"v\":\"five\",\"w\":6}] \"three\" 1.23 6");
     //
     // test7: exceptions
     try {
@@ -128,4 +139,3 @@ int main(int argc, char** argv) {
 	Json::test();
 #endif
 }
-
