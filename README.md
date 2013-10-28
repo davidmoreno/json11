@@ -5,7 +5,7 @@ Json-11 is yet another C++ class implementing [JSON](http://json.org) data inter
 
 ## Usage
 
-    #include <json11.h>
+    #include "json11.h"
 
 Then drop json11.cpp into your project to compile. Note that you need a compiler that supports C++11. I only tested it with GCC 4.8.1 on Linux. For GCC don't forget to add `-std=c++11` to compiler flags.
 
@@ -18,12 +18,16 @@ Json arr { 1, 2, str };   // array object, using initializer list
 arr << false;  // do you prefer 'push_back' ?
 ```
 
-To create key-value objects, start with a null object. Then use method `set(key,value)` to populate it.
+To create key-value objects, start with a null object. Then use method `set(key,value)` or `operator[]` to populate it.
 
 ```c++
     Json obj;
-    obj.set("one", 1).set("pi", pi).set("arr", arr);
-    cout << obj << endl;   // prints {"one":1,"pi":3.14,"arr":[1,2,"Hello",false]}
+    obj.set("one", 1).set("pi", pi);
+    obj["arr"] = arr;   // nice, but cannot be chained
+    Json hello = arr[2];
+    arr[2] = "bye";     // will affect obj["arr"], but not hello
+    cout << obj << endl;   // prints {"one":1,"pi":3.14,"arr":[1,2,"bye",false]}
+    cout << hello << endl;
 ```
 
 To extract scalar value from a Json instance, assign it to a scalar variable of matching type or use a cast. For collections use `operator[]` with either integer or string indexes.
@@ -104,14 +108,14 @@ The Json class methods can also throw standard exceptions out_of_range (from ope
 <dl>
 <dt>Json& operator << (const Json&)</dt>
 <dd>Appends an element to the array. To create a new array just append something to a null instance, or use the constructor with initializer list.</dd>
-<dt>const Json operator [] (int) const</dt>
-<dd>Retrieves array element by index.</dd>
-<dt>void insert(unsigned index, const Json& that)</dt>
-<dd>Inserts <i>that</i> into array before <i>index</i>, so it becomes the one at <i>index</i>.</dd>
-<dt>Json& replace(unsigned index, const Json& that)</dt>
-<dd>Replaces array element at <i>index</i> by <i>that</i></dd>
-<dt>void erase(unsigned index)</dt>
-<dd>Removes element at </i>index</i> from the array.</dd>
+<dt>Json operator [] (int) const</dt>
+<dd>Retrieves array element by index, as in `int x = arr[0]`, or replaces it, as in `arr[0] = "zero"`</dd>
+<dt>void insert(int index, const Json& that)</dt>
+<dd>Inserts <i>that</i> into array before <i>index</i>, so it becomes the one at <i>index</i>. If <i>index</i> < 0, counts from the end.</dd>
+<dt>Json& replace(int index, const Json& that)</dt>
+<dd>Replaces array element at <i>index</i> by <i>that</i>. If <i>index</i> < 0, counts from the end.</dd>
+<dt>void erase(int index)</dt>
+<dd>Removes element at </i>index</i> from the array. If <i>index</i> < 0, counts from the end.</dd>
 </dl>
 
 These methods throw `use_error` if this Json instance is not an array.
@@ -123,7 +127,7 @@ These methods throw `use_error` if this Json instance is not an array.
 <dd>Adds property "key:value" to this object, or replaces the <i>value</i> if <i>key</i> is already there. To create a new object, start from a null Json instance.</dd>
 <dt>Json get(const std::string& key)</dt>
 <dd>Returns value for the given key, or Json::null if this instance does not have such property.</dd>
-<dt>const Json operator [] (std::string&)</dt>
+<dt>Json operator [] (std::string&)</dt>
 <dd>Same as `get()`.</dd>
 <dt>const Json operator [] (const char*)</dt>
 <dd>Same as `get()`.</dd>
@@ -132,6 +136,12 @@ These methods throw `use_error` if this Json instance is not an array.
 <dt>std::vector<std::string> keys()</dt>
 <dd>Returns all property keys for this instance.</dd>
 </dl>
+
+### Subscript operator
+
+Array elements and object properties can be accessed through `operator[]` using integer and string indexes correspondingly. For arrays the element with given index must already exist, otherwise "std::out_of_range" is thrown. For objects, if property with given key does not exist, Json::null is returned.
+
+Technically, `operator[]` returns and instance of internal class Json::Property. Instances of this class behave very much like Json<i>s</i>, so in practice you don't have to remember about it.
 
 ### Comparison
 
@@ -177,7 +187,15 @@ arr.replace(2, 3);   // or:  arr.erase(2);
 cout << three;
 ```
 
-still prints "three". I hope this is what you expected.
+still prints "three". I hope this is what one would expect. On the other hand, if an array or object is a component of another array or object, changes in the component are visible "through", e.g.:
+
+```c++
+Json arr { 1, 2, "three" };
+Json obj;
+obj["arr"] = arr;
+arr[2] = 3;
+cout << obj["arr"][2];   // prints 3
+```
 
 -------
 
