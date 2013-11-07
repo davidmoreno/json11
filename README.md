@@ -1,4 +1,3 @@
-
 ## Introduction
 
 Json-11 is yet another C++ class implementing [JSON](http://json.org) data interchange format. It is designed with the (currenly) latest C++11 standard in mind. The code fits in a single file, reasonably fast, and the interface is made as simple as possible. Implements parsing, formatting, traversing and editing, [schema](http://json-schema.org) validation.
