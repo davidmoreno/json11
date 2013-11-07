@@ -1,7 +1,7 @@
 
 ## Introduction
 
-Json-11 is yet another C++ class implementing [JSON](http://json.org) data interchange format. It is designed with the (currenly) latest C++11 standard in mind. The code fits in a single file, reasonably fast, and the interface is made as simple as possible.
+Json-11 is yet another C++ class implementing [JSON](http://json.org) data interchange format. It is designed with the (currenly) latest C++11 standard in mind. The code fits in a single file, reasonably fast, and the interface is made as simple as possible. Implements parsing, formatting, traversing and editing, [schema](http://json-schema.org) validation.
 
 ## Usage
 
@@ -27,7 +27,7 @@ To create key-value objects, start with a null object. Then use method `set(key,
     Json hello = arr[2];
     arr[2] = "bye";     // will affect obj["arr"], but not hello
     cout << obj << endl;   // prints {"one":1,"pi":3.14,"arr":[1,2,"bye",false]}
-    cout << hello << endl;
+    cout << hello << endl; // still prints "hello"
 ```
 
 To extract scalar value from a Json instance, assign it to a scalar variable of matching type or use a cast. For collections use `operator[]` with either integer or string indexes.
@@ -47,7 +47,7 @@ To parse a JSON text, read it from a std::istream. To parse it from std::string 
 
 ```c++
     Json obj2 = Json::parse(jsontext);
-    cout << (obj == obj2) << endl;   // prints true; yes, Json_s_ are comparable
+    cout << (obj == obj2) << endl;   // prints true; yes, Jsons are comparable
     ifstream fs("big.json");
     Json big(fs);
 ```
@@ -111,11 +111,11 @@ The Json class methods can also throw standard exceptions out_of_range (from ope
 <dt>Json::Property operator [] (int) const</dt>
 <dd>Retrieves array element by index, as in `int x = arr[0]`, or replaces it, as in `arr[0] = "zero"`</dd>
 <dt>void insert(int index, const Json& that)</dt>
-<dd>Inserts <i>that</i> into array before <i>index</i>, so it becomes the one at <i>index</i>. If <i>index</i> \< 0, counts from the end.</dd>
+<dd>Inserts <i>that</i> into array before <i>index</i>, so it becomes the one at <i>index</i>. If <i>index</i> &lt; 0, counts from the end.</dd>
 <dt>Json& replace(int index, const Json& that)</dt>
-<dd>Replaces array element at <i>index</i> by <i>that</i>. If <i>index</i> \< 0, counts from the end.</dd>
+<dd>Replaces array element at <i>index</i> by <i>that</i>. If <i>index</i> &lt; 0, counts from the end.</dd>
 <dt>void erase(int index)</dt>
-<dd>Removes element at </i>index</i> from the array. If <i>index</i> \< 0, counts from the end.</dd>
+<dd>Removes element at </i>index</i> from the array. If <i>index</i> &lt; 0, counts from the end.</dd>
 </dl>
 
 These methods throw `use_error` if this Json instance is not an array.
@@ -125,10 +125,10 @@ These methods throw `use_error` if this Json instance is not an array.
 <dl>
 <dt>Json& set(std::string key, const Json& value)</dt>
 <dd>Adds property "key:value" to this object, or replaces the <i>value</i> if <i>key</i> is already there. To create a new object, start from a null Json instance.</dd>
-<dt>Json get(const std::string& key)</dt>
-<dd>Returns value for the given key, or Json::null if this instance does not have such property.</dd>
+<dt>Json get(const std::string& key) const</dt>
+<dd>Returns value for the given key, or `Json::undefined` if this instance does not have such property.</dd>
 <dt>Json::Property operator [] (std::string&)</dt>
-<dd>Returns value for the given key, or Json::null if this instance does not have such property. When used on the left of assignment operator as in `obj["key"] = value`, adds a key with given value or replaces existing one.</dd>
+<dd>Returns value for the given key, or `Json::undefined` if this instance does not have such property. When used on the left of assignment operator as in `obj["key"] = value`, adds a key with given value or replaces existing one.</dd>
 <dt>Json::Property operator [] (const char*)</dt>
 <dd>Same as the previous one.</dd>
 <dt>bool has(const std::string& key) const</dt>
@@ -163,8 +163,19 @@ Technically, `operator[]` returns and instance of internal class Json::Property.
 <dd>Same as stringify().</dd>
 <dt>friend std::ostream& operator << (std::ostream&, const Json&)</dt>
 <dd>Writes well-formed JSON text representing this object into std::ostream.</dd>
+<dt>friend std::istream& operator >> (std::istream&, Json&)</dt>
+<dt>Reads well-formed JSON text into given instance, replacing previous content.</dt>
 <dt>static int indent</dt>
 <dd>If not 0, result of formatting looks prettier.</dd>
+</dl>
+
+### Validation
+
+<dl>
+<dt>bool valid(Json& schema, std::string* reason = nullptr)</dt>
+<dd>Validates this instance against <i>schema</i>. If not valid and <i>reason</i> is not a null pointer, fills it with a short explanation of the problem.</dd>
+<dt>bool to_schema(std::string* reason)</dt>
+<dd>If this instance is a schema, tries to "compile" it, returning `false` and filling in <i>reason</i> if this is not a valid schema. Useful if this schema will be used for validation several times, otherwise every call of `valid()` will compile its argument again.</dd>
 </dl>
 
 ### Etc.
@@ -174,6 +185,10 @@ Technically, `operator[]` returns and instance of internal class Json::Property.
 <dd>Returns size of an array or number of properties for an object.</dd>
 <dt>static Json null</dt>
 <dd>The <b>null</b> instance.</dd>
+<dt>static Json array()</dt>
+<dd>Returns an empty array, that is [].</dd>
+<dt>static Json object()</dt>
+<dd>Returns an empty object, that is {}</dd>
 </dl>
 
 ### Miscellaneous notes
@@ -234,6 +249,7 @@ at top: object
 enter a number to select an object, q to go back
 .             : list current object
 p [file.json] : print out current object [into file]
+s file.json   : load file as a json schema
 = text        : replace current object by parsed text
 >
 ```

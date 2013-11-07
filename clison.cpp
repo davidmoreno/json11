@@ -6,6 +6,8 @@
  * it under the terms of the MIT license. See LICENSE for details.
  */
 
+// Version 0.6.5, 2013-11-07
+
 #include "json11.h"
 #include <sstream>
 #include <fstream>
@@ -13,6 +15,11 @@
 #include <cstring>
 
 using namespace std;
+
+Json meta;
+Json schema;
+Json sprops;
+const char* typetag[] = { "null", "bool", "number", "string", "array", "object" };
 
 Json follow(Json& top, vector<string>& path, string* full) {
     Json curr = top;
@@ -32,12 +39,11 @@ Json follow(Json& top, vector<string>& path, string* full) {
 }
 
 void cli(Json& top, Json js, vector<string>& path) {
-    const char* tag[] = { "null", "bool", "number", "string", "array", "object" };
 start:
     Json::Type type = js.type();
     string fullpath;
     follow(top, path, &fullpath);
-    cout << (fullpath == "" ? "at top" : fullpath) << ": " << tag[type] << endl;
+    cout << (fullpath == "" ? "at top" : fullpath) << ": " << typetag[type] << endl;
     if (type == Json::Type::OBJECT) {
         int n = 0;
         for (string key : js.keys()) {
@@ -58,9 +64,9 @@ start:
             Json elem = js[i];
             Json::Type eltype = elem.type();
             if (eltype == Json::ARRAY)
-                cout << tag[eltype] << " [" << elem.size() << "]";
+                cout << typetag[eltype] << " [" << elem.size() << "]";
             else if (eltype == Json::OBJECT)
-                cout << tag[eltype] << " {" << elem.size() << "}";
+                cout << typetag[eltype] << " {" << elem.size() << "}";
             else
                 cout << elem;
             cout << endl;
@@ -84,6 +90,9 @@ start:
             cout << "enter a number to select an object, q to go back\n";
             cout << ".             : list current object\n";
             cout << "p [file.json] : print out current object [into file]\n";
+#ifdef WITH_SCHEMA
+            cout << "s file.json   : load file as a json schema\n";
+#endif
             cout << "= text        : replace current object by parsed text\n";
             continue;
         }
@@ -111,6 +120,29 @@ start:
             out.close();
             continue;
         }
+#ifdef WITH_SCHEMA
+        if (*p == 's') {
+            while (isspace(*++p));
+            if (*p == 0) {
+                cout << "file name expected\n";
+                continue;
+            }
+            ifstream ifs(p);
+            if (!ifs) {
+                cout << "cannot read " << p << '\n';
+                continue;
+            }
+            try {
+                ifs >> schema;
+            } catch (std::exception& ex) {
+                cout << "exception: " << ex.what() << '\n';
+            }
+            string reason;
+            if (!js.valid(schema, &reason))
+                cout << reason << '\n';
+            continue;
+        }
+#endif
         if (*p == '=') {
             try {
                 js = Json::parse(p + 1);
@@ -151,7 +183,6 @@ start:
         if (type == Json::OBJECT) {
             name = js.keys()[n];
             next = js[name];
-            //name = "." + name;
         } else if (type == Json::ARRAY) {
             name = to_string(n);
             next = js[n];
@@ -170,6 +201,22 @@ int main(int argc, char** argv) {
         return 1;
     }
     try {
+#ifdef WITH_SCHEMA
+        ifstream schfs("schema.json");
+        if (!schfs)
+            cout << "note: schema.json not found\n";
+        else {
+            //meta = Json(schfs);
+            schfs >> meta;
+            string schema_url = "http://json-schema.org/draft-04/schema#";
+            if (meta.type() != Json::OBJECT || meta["$schema"] != schema_url) {
+                cout << "schema.json is not a http://json-schema.org/draft-04/schema\n";
+                meta = Json::null;
+            }
+            schfs.close();
+            sprops = meta["properties"];
+        }
+#endif
         ifstream fs(argv[1]);
         Json js(fs);
         fs.close();
@@ -185,6 +232,8 @@ int main(int argc, char** argv) {
         cout << "exception: " << ex.what() << '\n';
     }
 #ifdef TEST
+    meta = Json::null;
+    schema = Json::null;
     Json::test();
 #endif
 }

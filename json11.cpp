@@ -6,6 +6,8 @@
  * it under the terms of the MIT license. See LICENSE for details.
  */
 
+// Version 0.6.5, 2013-11-07
+
 #include "json11.h"
 #include <assert.h>
 #include <cmath>
@@ -31,8 +33,10 @@ void Json::Node::test() {
 }
 #endif
 
-Json Json::null;
 Json::Node Json::Node::null(1);
+Json::Node Json::Node::undefined(1);
+Json Json::null;
+Json Json::undefined(&Node::undefined);
 Json::Bool Json::Bool::T(true);
 Json::Bool Json::Bool::F(false);
 set<string> Json::keyset;
@@ -68,15 +72,15 @@ Json::parse_error::parse_error(const char* msg, std::istream& in) : std::runtime
 Json::Node::Node(unsigned init) {
     refcnt = init;
 #ifdef TEST
-    if (this != &null && this != &Bool::T && this != &Bool::F)
+    if (this != &null && this != &undefined && this != &Bool::T && this != &Bool::F)
         nodes.push_back(this);
 #endif
 }
 
 Json::Node::~Node() {
-    assert(this == &null || this == &Bool::T || this == &Bool::F || refcnt == 0);
+    assert(this == &null || this == &undefined || this == &Bool::T || this == &Bool::F || refcnt == 0);
 #ifdef TEST
-    if (this == &null || this == &Bool::T || this == &Bool::F)
+    if (this == &null || this == &undefined || this == &Bool::T || this == &Bool::F)
         return;
     auto it = find(nodes.begin(), nodes.end(), this);
     assert(it != nodes.end());
@@ -85,14 +89,14 @@ Json::Node::~Node() {
 }
 
 void Json::Node::unref() {
-    if (this == &null || this == &Bool::T || this == &Bool::F )
+    if (this == &null || this == &undefined || this == &Bool::T || this == &Bool::F )
         return;
     assert(refcnt > 0);
     if (--refcnt == 0)
         delete this;
 }
 
-bool Json::Array::operator == (const Node& that) {
+bool Json::Array::operator == (const Node& that) const {
     if (this == &that)
         return true;
     if (that.type() != Type::ARRAY)
@@ -102,7 +106,7 @@ bool Json::Array::operator == (const Node& that) {
             [](Node* n1, Node* n2){ return *n1 == *n2; });
 }
 
-bool Json::Object::operator == (const Node& that) {
+bool Json::Object::operator == (const Node& that) const {
     if (this == &that)
         return true;
     if (that.type() != Type::OBJECT)
@@ -113,7 +117,7 @@ bool Json::Object::operator == (const Node& that) {
             [](kv p, kv q){ return *p.first == *q.first && *p.second == *q.second; });
 }
 
-bool Json::Number::operator == (const Node& that) {
+bool Json::Number::operator == (const Node& that) const {
     if (this == &that)
         return true;
     if (that.type() != Type::NUMBER)
@@ -269,7 +273,7 @@ Json Json::get(const string& key) const {
     if (root->type() != Type::OBJECT)
         throw use_error("method not applicable");
     Node* n = ((Object*)root)->get(key);
-    return n == nullptr ? null : Json(n);
+    return n == nullptr ? undefined : Json(n);
 }
 
 bool Json::has(const string& key) const {
@@ -315,7 +319,7 @@ vector<string> Json::keys() {
     return ret;
 }
 
-bool Json::String::operator == (const Node& that) {
+bool Json::String::operator == (const Node& that) const {
     return this == &that ||
             (that.type() == Type::STRING && value == ((String*)&that)->value);
 }
@@ -366,6 +370,16 @@ void Json::String::print(ostream& out) const {
     escape(out, value);
 }
 
+void Json::Object::traverse(void (*f)(const Node*)) const {
+    for (auto it : map)
+        f(it.second);
+}
+
+void Json::Array::traverse(void (*f)(const Node*)) const {
+    for (auto it : list)
+        f(it);
+}
+
 void Json::Object::print(ostream& out) const {
     out << '{';
     ++level;
@@ -377,6 +391,8 @@ void Json::Object::print(ostream& out) const {
             out << '\n' << string(indent*level, ' ');
         escape(out, *it.first);
         out << ':';
+        if (indent)
+            out << ' ';
         it.second->print(out);
         comma = true;
     }
@@ -408,7 +424,7 @@ Json::Object::~Object() {
     map.clear();
 }
 
-Json::Node* Json::Object::get(const string& key) {
+Json::Node* Json::Object::get(const string& key) const {
     auto kp = keyset.find(key);
     if (kp == keyset.end())
         return nullptr;
@@ -477,6 +493,14 @@ ostream& operator << (ostream& out, const Json& json) {
     return out;
 }
 
+istream& operator >> (istream& in, Json& json) {
+    json.root->unref();
+    Json temp(in);
+    json.root = temp.root;
+    temp.root = nullptr;
+    return in;
+}
+
 Json::String::String(istream& in) {
     int quote = in.get();
     while (!in.eof()) {
@@ -487,7 +511,7 @@ Json::String::String(istream& in) {
             return;
         if (c == '\\') {
             c = in.get();
-            if (c == quote || c == '\\')
+            if (c == quote || c == '\\' || c == '/')
                 value.push_back(c);
             else if (c == 'n')
                 value.push_back('\n');
@@ -500,13 +524,22 @@ Json::String::String(istream& in) {
             else if (c == 'f')
                 value.push_back('\f');
             else if (c == 'u') {
-                char cc = 0;
+                unsigned w = 0;
                 for (int i = 0; i < 4; i++) {
                     if (!isxdigit(c = toupper(in.get())))
                         throw parse_error("not a hex digit", in);
-                    cc = (cc << 4) | (isdigit(c) ? c - '0' : c - 'A');
-                    if (i == 1  || i == 3)
-                        value.push_back(cc);
+                    w = (w << 4) | (isdigit(c) ? c - '0' : c - 'A' + 10);
+                }
+                // garbage in, garbage out
+                if (w <= 0x7f)
+                    value.push_back(w);
+                else if (w <= 0x07ff) {
+                    value.push_back(0xc0 | ((w >> 6) & 0x1f));
+                    value.push_back(0x80 | (w & 0x3f));
+                } else {
+                    value.push_back(0xe0 | ((w >> 12) & 0x0f));
+                    value.push_back(0x80 | ((w >> 6) & 0x3f));
+                    value.push_back(0x80 | (w & 0x3f));
                 }
             }
             else
@@ -707,8 +740,9 @@ Json::operator bool() const {
     throw bad_cast();
 }
 
-bool Json::operator == (const Json& that) {
+bool Json::operator == (const Json& that) const {
     if (root == that.root)
         return true;
     return *root == *that.root;
 }
+

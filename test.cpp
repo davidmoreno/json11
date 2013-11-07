@@ -58,7 +58,7 @@ void test() {
         cout << "test1 bad bools\n";
     //
     // test2: arrays
-    Json arr;
+    Json arr = Json::array();
     arr << null << inum << lnum << fnum << dnum << ldnum << t << f << str;
     str = "bye";  // should not affect arr
     out << arr;
@@ -122,6 +122,21 @@ void test() {
         if (string(ex.what()) != "cyclic dependency")
             cout << "text7 failed: " << ex.what() << '\n';
     }
+    //
+    // test8: schema
+    ifstream fs1("products.json");
+    Json prods(fs1);
+    fs1.close();
+    ifstream fs2("products-schema.json");
+    Json sch(fs2);
+    fs2.close();
+    string reason;
+    if (!sch.to_schema(&reason))
+        cout << "test8 schema: " << reason << '\n';
+    else if (prods.valid(sch, &reason))
+        cout << "test8 ok\n";
+    else
+        cout << "test8: " << reason << '\n';
 }
 
 int main(int argc, char** argv) {
