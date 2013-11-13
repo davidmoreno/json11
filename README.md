@@ -163,7 +163,7 @@ Technically, `operator[]` returns and instance of internal class Json::Property.
 <dt>friend std::ostream& operator << (std::ostream&, const Json&)</dt>
 <dd>Writes well-formed JSON text representing this object into std::ostream.</dd>
 <dt>friend std::istream& operator >> (std::istream&, Json&)</dt>
-<dt>Reads well-formed JSON text into given instance, replacing previous content.</dt>
+<dd>Reads well-formed JSON text into given instance, replacing previous content.</dd>
 <dt>static int indent</dt>
 <dd>If not 0, result of formatting looks prettier.</dd>
 </dl>
