@@ -214,7 +214,7 @@ public:
     Json(float x) { (root = new Number(x))->refcnt++; }
     Json(double x) { (root = new Number(x))->refcnt++; }
     Json(long double x) { (root = new Number(x))->refcnt++; }
-    Json(std::string& s) { (root = new String(s))->refcnt++; }
+    Json(const std::string& s) { (root = new String(s))->refcnt++; }
     Json(const char* s) { (root = new String(s))->refcnt++; }
     Json(std::initializer_list<Json>);
     Json(const Property& p) { (root = p.target().root)->refcnt++; }
